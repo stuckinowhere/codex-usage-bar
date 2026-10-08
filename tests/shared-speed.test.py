@@ -13,22 +13,15 @@ import windows_patch
 
 class RendererFixture:
     def __init__(self, adapter):
-        if adapter is mod:
-            primary = '\n'.join([
-                'Oe=(0,UR.jsxs)(pR.Item,{children:[se,De]})',
-                'className:Lr(`flex w-full flex-col gap-2`,Ne&&`relative`),onPaste:Ri?Dl:void 0',
-                '(0,gZ.jsx)(zt,{initial:!1,children:Jl&&c==null?',
-            ])
-            turn = 'function Ho(e){return e}var Uo,Wo,Go,Ko,qo,Jo;'
-            initial = '(Rs.div,{"aria-hidden":u,className:f,inert:p,initial:m,animate:h,exit:g,transition:_,children:b})'
-        else:
-            primary = '\n'.join([
-                'Oe=(0,jR.jsxs)(QL.Item,{children:[ce,De]})',
-                'className:ld(`flex w-full flex-col gap-2`,Ue&&`relative`),onPaste:Yi?Ul:void 0',
-                '(0,WX.jsx)(ae,{initial:!1,children:lu&&s==null?',
-            ])
-            turn = 'function Vo(e){return e}var Ho,Uo,Wo,Go,Ko,qo;'
-            initial = '(gc.div,{"aria-hidden":u,className:f,inert:p,initial:m,animate:h,exit:g,transition:_,children:b})'
+        # Both inspected 26.1002 renderers have the same hook names; their
+        # platform-specific asset paths and archive pins remain independent.
+        primary = '\n'.join([
+            'Oe=(0,jR.jsxs)(QL.Item,{children:[ce,De]})',
+            'className:ld(`flex w-full flex-col gap-2`,Ue&&`relative`),onPaste:Yi?Ul:void 0',
+            '(0,WX.jsx)(ae,{initial:!1,children:lu&&s==null?',
+        ])
+        turn = 'function Vo(e){return e}var Ho,Uo,Wo,Go,Ko,qo;'
+        initial = '(gc.div,{"aria-hidden":u,className:f,inert:p,initial:m,animate:h,exit:g,transition:_,children:b})'
         self.files = {
             adapter.PRIMARY: primary,
             adapter.SHARED: 'onNotification(e,t,n=null,r,i=Date.now()){',
@@ -41,6 +34,15 @@ class RendererFixture:
 
 
 class SharedSpeedTests(unittest.TestCase):
+    def test_changed_or_duplicate_hooks_refuse_both_renderers(self):
+        for adapter in (mod, windows_patch):
+            for duplicate in (False, True):
+                with self.subTest(adapter=adapter.__name__, duplicate=duplicate):
+                    fixture=RendererFixture(adapter)
+                    fixture.files[adapter.SHARED] = fixture.files[adapter.SHARED] * 2 if duplicate else ''
+                    with self.assertRaisesRegex(ValueError,'expected one source anchor'):
+                        adapter.patch_sources(fixture)
+
     def test_packaged_speed_clears_on_completion_for_both_adapters(self):
         # Both adapters read text and normalize a Windows checkout's CRLF.
         expected = (mod.ROOT / 'src/speed.mjs').read_text(encoding='utf-8').encode('utf-8')

@@ -1,5 +1,8 @@
 # Codex Usage Bar Handoff
 
+> Historical upstream handoff. For this fork's current macOS version and
+> verification status, see the [26.1002.52244 review](macOS%2026.1002.52244.md).
+
 ## Current delivery
 
 Source is a version-pinned local desktop mod, with a one-command installer: `python3 scripts/setup.py` in macOS Terminal. Supported app: Apple Silicon desktop `26.930.61225` at `/Applications/ChatGPT.app`. See [Installation](Installation.md). A changed version must be inspected; never bypass the version/hash or signing guards.

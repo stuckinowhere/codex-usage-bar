@@ -1,5 +1,11 @@
 # Codex Usage Bar
 
+**Fork para tu Mac:** adaptado a Apple Silicon y Codex/ChatGPT Desktop
+`26.1002.52244`. Conserva cuota semanal, archivos modificados, velocidad
+estimada y contexto. La instalación se ejecuta desde Terminal porque cierra
+y vuelve a abrir Codex. Consulta la [revisión de esta versión](docs/macOS%2026.1002.52244.md)
+para distinguir las comprobaciones realizadas de la aceptación pendiente en la app.
+
 See your weekly quota, changed files, response speed and context usage just above the Codex chat input.
 
 Codex Usage Bar is a community desktop modification that uses Codex's existing account state, theme and chat-font settings. It adds one compact row while preserving the native composer, Goal controls and Files changed action.
@@ -25,27 +31,26 @@ Missing data appears as `—`, never a fabricated zero. The row adapts to narrow
 
 | Platform | Pinned application | Status |
 | --- | --- | --- |
-| Apple Silicon macOS | Desktop `26.930.61225` | Local installer with validation and recovery; full installed-app acceptance remains pending. |
+| Apple Silicon macOS | Desktop `26.1002.52244` | Local installer with validation and recovery; full installed-app acceptance remains pending. |
 | Windows x64 | Store package `26.1002.7124.0`, renderer `26.1002.52244` | Experimental local preview; native rendering observed, full acceptance pending. |
 
 A desktop update needs fresh compatibility review. Changing a version number or bypassing a hash check is not a supported upgrade path.
 
 ## Installation
 
-Clone the source, then follow the instructions for your platform:
-
-```sh
-git clone https://github.com/cocombee/codex-usage-bar.git
-cd codex-usage-bar
-```
+Follow the instructions for your platform below.
 
 ### macOS
 
-Requires **Apple Silicon**, **Python 3.9+**, **Node.js 20+**, and the pinned desktop version at `/Applications/ChatGPT.app`. Keep this checkout on the same disk as `/Applications`, with space for the candidate and recovery copies.
+Requires **Apple Silicon**, **Python 3.9+**, **Node.js 20+**, and the pinned desktop version at `/Applications/ChatGPT.app`. Keep this checkout on the same disk as `/Applications`, with space for the candidate and recovery copies. Use a local folder outside iCloud/OneDrive/other File Provider syncing: synced package metadata can invalidate strict code signing. Application Support is the recommended location.
 
 Run in **macOS Terminal, outside Codex**:
 
 ```sh
+mkdir -p "$HOME/Library/Application Support/CodexUsageBar"
+git clone https://github.com/stuckinowhere/codex-usage-bar.git "$HOME/Library/Application Support/CodexUsageBar/source"
+cd "$HOME/Library/Application Support/CodexUsageBar/source"
+
 # Check compatibility without building or installing.
 python3 scripts/setup.py --check
 
@@ -66,6 +71,8 @@ Requires **x64 Windows**, **Python 3.10+**, the exact current-user Store package
 Run in PowerShell from this checkout:
 
 ```powershell
+git clone https://github.com/stuckinowhere/codex-usage-bar.git
+cd codex-usage-bar
 python scripts/windows_setup.py --check
 python scripts/windows_setup.py --build
 $build = (Get-Content -Raw .local-windows/latest.json | ConvertFrom-Json).build
@@ -84,7 +91,7 @@ Automated checks cover metric calculations, responsive layouts, native diff comp
 
 Native application checks are tracked separately:
 
-- **macOS:** the latest installed candidate still needs rendered-UI and normal quit/reopen acceptance; a clean vendor-app end-to-end installation remains unverified.
+- **macOS:** this fork targets the inspected `26.1002.52244` vendor bundle. Installation, live metrics, native diff interaction and normal quit/reopen acceptance remain pending; see the version review for build and fixture evidence.
 - **Windows:** the row rendered in chats and on new-chat screens, and Weekly matched the core account quota. Live token speed, actual diff interaction, full display-scaling checks and two normal shared-profile launches remain pending.
 - **Both platforms:** token speed is an estimate from desktop lifecycle events, not provider API timing. Passing tests or a healthy process does not establish every live-app behavior.
 

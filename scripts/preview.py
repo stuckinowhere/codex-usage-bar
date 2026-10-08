@@ -6,11 +6,12 @@ import argparse
 import json
 import sys
 sys.dont_write_bytecode = True
-from mod import Archive, ROOT, NEW, ASAR
+from mod import Archive, ROOT, NEW, ASAR, SHARED
 
-HOST_FILES = {'app-shared-122c56612a72.js','rolldown-runtime-2d059c5e81f4.js',
+HOST_FILES = {Path(SHARED).name,'rolldown-runtime-2d059c5e81f4.js',
               'codex-usage-speed.mjs','codex-usage-bar.mjs','codex-usage-metrics.mjs',
-              'codex-usage-diff-slot.mjs','codex-usage-native-fixed.mjs'}
+              'codex-usage-diff-slot.mjs','codex-usage-native-fixed.mjs',
+              'codex-usage-responsive.mjs','codex-usage-native-layout.mjs'}
 HOST_ARCHIVE = NEW / ASAR
 WINDOWS = False
 
@@ -23,10 +24,8 @@ class Handler(BaseHTTPRequestHandler):
         try:
             if path in ['/', '/tests/fixture.html']:
                 html = (ROOT / 'tests/fixture.html').read_text(encoding='utf-8')
-                if WINDOWS:
-                    html = html.replace('cfn as loadReact, eln as loadJSX, Zcn as loadDOM, Qcn as loadPortal',
-                                        'ggn as loadReact, npn as loadJSX, $fn as loadDOM, epn as loadPortal')
-                    html = html.replace('app-shared-122c56612a72.js', 'app-shared-40678a67f0e3.js')
+                shared_name = 'app-shared-40678a67f0e3.js' if WINDOWS else Path(SHARED).name
+                html = html.replace('__HOST_SHARED__', shared_name)
                 data = html.encode('utf-8'); mime = 'text/html'
             elif path.startswith('/__host/') and path.rsplit('/',1)[1] in HOST_FILES:
                 data = Archive(HOST_ARCHIVE).read('webview/assets/' + path.rsplit('/',1)[1]); mime = 'text/javascript'

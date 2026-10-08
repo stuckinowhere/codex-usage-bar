@@ -6,7 +6,13 @@ In macOS Terminal, from the downloaded repository, run:
 python3 scripts/setup.py
 ```
 
-Requirements: Apple Silicon macOS, Python 3.9+, Node.js 20+, the inspected desktop version `26.930.61225` at `/Applications/ChatGPT.app`, and a writable checkout on the same filesystem as `/Applications` with backup space. Other versions stop without replacement; the installer never guesses new patch anchors or disables validation.
+Requirements: Apple Silicon macOS, Python 3.9+, Node.js 20+, the inspected desktop version `26.1002.52244` at `/Applications/ChatGPT.app`, and a writable checkout on the same filesystem as `/Applications` with backup space. Use `~/Library/Application Support/CodexUsageBar/source` or another local folder outside File Provider syncing. Synced Documents/Desktop folders can reintroduce Finder metadata while signatures are being checked. Other versions stop without replacement; the installer never guesses new patch anchors or disables validation.
+
+This fork's renderer and signing changes are recorded in the
+[26.1002.52244 review](macOS%2026.1002.52244.md). The signing reader decodes
+DER entitlements into XML. Before local signing it removes only FinderInfo
+and ResourceFork metadata from local bundle copies and the staged candidate, retaining quarantine
+and unrelated attributes.
 
 ## Three steps
 
@@ -41,4 +47,7 @@ python3 scripts/setup.py --accept --confirm-rendered-ui --confirm-quit-reopen
 
 This optional command verifies the installed candidate, retained recovery bundles, signatures, fingerprints, and identity of the sole running app before saving your explicit attestation in `local-build.json`. It does not build, install, quit, launch, or delete the recovery app. Process health never grants acceptance automatically. You can update without recording acceptance: the installer preserves the known-working recovery copy first. If either check fails, preserve the receipts and recovery bundles; do not use the acceptance command to bypass a failed check.
 
-An earlier working local mod has reopened successfully. The latest candidate remains pending installed-app acceptance; recovery to an older working build is not acceptance of the candidate. Clean vendor-source policy, timeouts, locking and failure recovery have automated coverage; a clean vendor-app end-to-end install remains unverified. This pinned installer cannot guarantee every macOS environment will launch successfully, so refusal and recovery are part of its contract.
+This fork's candidate remains pending installation and installed-app acceptance.
+Clean vendor-source policy, timeouts, locking and failure recovery have automated
+coverage; a clean vendor-app end-to-end install remains unverified. Refusal and
+recovery are part of the installer contract.

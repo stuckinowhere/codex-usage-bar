@@ -9,6 +9,7 @@ import subprocess
 import tempfile
 
 LIBRARY_LOADING_KEY = 'com.apple.security.cs.disable-library-validation'
+ROOT = Path(__file__).resolve().parents[1]
 
 RESTRICTED_VENDOR_KEYS = frozenset({
     'com.apple.application-identifier',
@@ -108,8 +109,12 @@ def executable(bundle):
 
 
 def metadata(target):
-    result = subprocess.run(['/usr/bin/codesign', '-d', '--entitlements', ':-', str(target)],
+    # '-' decodes the current DER entitlements. The deprecated ':-' reads
+    # only the legacy blob, which is empty in the inspected vendor bundle.
+    result = subprocess.run(['/usr/bin/codesign', '-d', '--entitlements', '-', '--xml', str(target)],
                             capture_output=True, check=True,timeout=30)
+    require(b'invalid entitlements blob' not in result.stderr,
+            'Cannot decode signing entitlements: ' + str(target))
     entitlements = plistlib.loads(result.stdout) if result.stdout else {}
     result = subprocess.run(['/usr/bin/codesign', '-dv', '--verbose=4', str(target)],
                             capture_output=True, text=True, check=True,timeout=30)
@@ -173,11 +178,29 @@ def verify_source(app, expected=None, kind='local'):
     return observed
 
 
+def clean_copy_metadata(app):
+    """Remove signature detritus only from this checkout's local app copies."""
+    app = Path(app)
+    require(not app.is_symlink(), 'Metadata cleanup refuses symlink bundles')
+    app = app.resolve(strict=True)
+    require(app.is_relative_to(ROOT.resolve()) and app.suffix == '.app',
+            'Metadata cleanup is restricted to local app copies')
+    for attribute in ('com.apple.FinderInfo', 'com.apple.ResourceFork'):
+        subprocess.run(['/usr/bin/xattr', '-d', '-r', '-s', attribute, str(app)],
+                       check=True, capture_output=True, timeout=120)
+
+
 def sign(app):
     # The copy comes from the already repaired working app, preserving all
     # supported capabilities. Only verified Codex Framework hosts get the
     # existing user-approved library-loading exception.
     app = Path(app).resolve(strict=True)
+    require(app == (ROOT / 'New Build' / 'ChatGPT.app').resolve(),
+            'Metadata cleanup and signing are restricted to the staged candidate')
+    # Copied package directories can acquire Finder metadata. Strict signing
+    # rejects it. Remove only these two attributes; keep quarantine and all
+    # unrelated attributes, and never apply this operation to the source app.
+    clean_copy_metadata(app)
     framework_binary = (app / FRAMEWORK / 'Versions/Current/Codex Framework').resolve(strict=True)
     expected = {}
     with tempfile.TemporaryDirectory(prefix='codex-usage-signing-') as directory:
@@ -191,7 +214,11 @@ def sign(app):
                     require(not before['entitlements'].get(LIBRARY_LOADING_KEY), 'Unexpected loading exception host')
                 else:
                     allow = True
-            safe = local_entitlements(before['entitlements'], allow_library_loading=allow,
+            # Frameworks are libraries, not process hosts. Current codesign
+            # omits their process entitlements; preserve capabilities on the
+            # main/helper executables rather than forcing claims onto a dylib.
+            original = before['entitlements'] if target.suffix == '.app' else {}
+            safe = local_entitlements(original, allow_library_loading=allow,
                                       verified_executable_host=allow)
             key = str(target.relative_to(app)) if target != app else '.'
             expected[key] = safe

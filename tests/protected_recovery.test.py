@@ -23,6 +23,7 @@ class ProtectedRecoveryTests(unittest.TestCase):
         self.addCleanup(self.stack.close)
         root = Path(self.stack.enter_context(tempfile.TemporaryDirectory()))
         self.stack.enter_context(patch.object(mod, 'ROOT', root))
+        self.stack.enter_context(patch.object(mod.signing, 'ROOT', root))
         for name in ['APP', 'NEW', 'SAFE', 'PROTECTED']:
             self.stack.enter_context(patch.object(mod, name, root / name / 'ChatGPT.app'))
         self.stack.enter_context(patch.object(mod, 'RECEIPT', root / 'receipt.json'))

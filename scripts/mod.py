@@ -17,12 +17,12 @@ import signing
 
 ROOT = Path(__file__).resolve().parents[1]
 APP = Path('/Applications/ChatGPT.app')
-VERSION = '26.930.61225'
-BASELINE = '88b8cce6f627771bf341f5a6bb464ad220749b0d442d44f618d7741c2de7318b'
-PRIMARY = 'webview/assets/app-primary-1a9a7a89414a.js'
-SHARED = 'webview/assets/app-shared-122c56612a72.js'
-TURN = 'webview/assets/local-conversation-turn-1432d9d2675d.js'
-INITIAL = 'webview/assets/app-initial-69cd8dbddec5.js'
+VERSION = '26.1002.52244'
+BASELINE = '40efd7acdf03a24817fcd7f35684fc2173b154df06774243cb4ab227e36fa915'
+PRIMARY = 'webview/assets/app-primary-15d1279f1ff0.js'
+SHARED = 'webview/assets/app-shared-6c00c2afcf84.js'
+TURN = 'webview/assets/local-conversation-turn-310d2b91b0d8.js'
+INITIAL = 'webview/assets/app-initial-61c077dcc1af.js'
 ASAR = Path('Contents/Resources/app.asar')
 PLIST = Path('Contents/Info.plist')
 SAFE = ROOT / 'Safe Build' / 'ChatGPT.app'
@@ -155,64 +155,50 @@ def unique_replace(source, anchor, replacement, label):
 
 
 def patch_sources(archive):
-    shared = archive.read(SHARED).decode()
-    primary = archive.read(PRIMARY).decode()
-    anchor = 'Oe=(0,UR.jsxs)(pR.Item,{children:[se,De]})'
-    primary = unique_replace(primary, anchor,
-        'Oe=(0,UR.jsxs)(pR.Item,{"data-cu-native-goal":true,children:[se,De]})',
-        'native Goal width reference marker')
-    # Read-only notification observer runs before normal reduction. Observer
-    # failure cannot interrupt message handling; notification params aren't logged.
+    primary, shared, turn, initial = (archive.read(path).decode('utf-8') for path in (PRIMARY, SHARED, TURN, INITIAL))
+    primary = unique_replace(primary, 'Oe=(0,jR.jsxs)(QL.Item,{children:[ce,De]})',
+                            'Oe=(0,jR.jsxs)(QL.Item,{"data-cu-native-goal":true,children:[ce,De]})', 'macOS Goal marker')
     anchor = 'onNotification(e,t,n=null,r,i=Date.now()){'
-    shared = unique_replace(shared, anchor, anchor +
-        'try{__cuObserve(this.hostId,e,t)}catch{}', 'notification observer')
+    shared = unique_replace(shared, anchor, anchor + 'try{__cuObserve(this.hostId,e,t)}catch{}', 'macOS notification observer')
     shared = 'import{observeMetric as __cuObserve}from"./codex-usage-speed.mjs";\n' + shared
-    anchor = 'className:Lr(`flex w-full flex-col gap-2`,Ne&&`relative`),onPaste:Ri?Dl:void 0'
+    anchor = 'className:ld(`flex w-full flex-col gap-2`,Ue&&`relative`),onPaste:Yi?Ul:void 0'
+    primary = unique_replace(primary, anchor, '"data-cu-composer-stack":true,' + anchor, 'macOS composer stack')
+    anchor = '(0,WX.jsx)(ae,{initial:!1,children:lu&&s==null?'
     primary = unique_replace(primary, anchor,
-        '"data-cu-composer-stack":true,' + anchor, 'composer stack scope')
-    anchor = '(0,gZ.jsx)(zt,{initial:!1,children:Jl&&c==null?'
-    primary = unique_replace(primary, anchor,
-        'jt!==`cloud`&&!Je?(0,gZ.jsx)(__cuHost,'
-        '{conversationId:Ye,hostId:st.hostId,rateLimit:en}):null,' + anchor,
-        'usage above intact native Goal and composer controls')
-    host = '''
-let __cuBar;
-function __cuHost({conversationId,hostId,rateLimit,selectedModel}){
-  __cuBar??=__cuCreateBar(Hf(),X());
-  const placementRef=Hf().useRef(null);
-  __cuLayout(Hf(),placementRef);
-  const usage=Y(Nf,conversationId);
-  const core=gFe(rateLimit).filter(entry=>entry.limitName==null);
-  return X().jsx(`div`,{ref:placementRef,"data-cu-placement":true,children:X().jsx(__cuBar,{conversationId,hostId,usage,entries:core})});
-}
-'''
+        'Ut!==`cloud`?(0,WX.jsx)(__cuHost,{conversationId:at,hostId:_i,rateLimit:ln}):null,' + anchor,
+        'macOS usage placement')
     primary = ('import{useNativeLayout as __cuLayout}from"./codex-usage-native-layout.mjs";\n'
-               'import{createBar as __cuCreateBar}from"./codex-usage-bar.mjs";\n'
-               'import{weeklyWindow as __cuWeekly}from"./codex-usage-metrics.mjs";\n' + primary + host)
-    turn = archive.read(TURN).decode()
-    start = turn.index('function Ho(e){')
-    end = turn.index('var Uo,Wo,Go,Ko,qo,Jo;', start)
-    turn = unique_replace(turn, turn[start:end], '''function Ho(e){
-      return __cuFixed(e,{React:__cuLoadReact(),jsx:Go,DOM:Wo,anchor:Zn,
-        useSelector:U,diffAtom:Kt,cwdAtom:Pt,extraAtom:Ln,summarize:diff=>ro(Or(diff)),
-        Diff:Yi,Motion:H,Presence:x,Todo:ta,Layout:ao,fade:qo,layout:Jo,delay:Ko});
+               'import{createBar as __cuCreateBar}from"./codex-usage-bar.mjs";\n' + primary + '''
+let __cuBar;
+function __cuHost({conversationId,hostId,rateLimit}){
+  __cuBar??=__cuCreateBar(Pp(),Z());
+  const placementRef=Pp().useRef(null);
+  __cuLayout(Pp(),placementRef);
+  const usage=$(kl,conversationId);
+  const core=mSe(rateLimit).filter(entry=>entry.limitName==null);
+  return Z().jsx(`div`,{ref:placementRef,"data-cu-placement":true,children:Z().jsx(__cuBar,{conversationId,hostId,usage,entries:core})});
+}
+''')
+    start = turn.index('function Vo(e){')
+    end = turn.index('var Ho,Uo,Wo,Go,Ko,qo;', start)
+    turn = unique_replace(turn, turn[start:end], '''function Vo(e){
+      return __cuFixed(e,{React:__cuLoadReact(),jsx:Wo,DOM:Uo,anchor:Pr,
+        useSelector:J,diffAtom:cn,cwdAtom:xn,extraAtom:Rn,summarize:diff=>no(br(diff)),
+        Diff:Aa,Motion:Te,Presence:u,Todo:pa,Layout:io,fade:Ko,layout:qo,delay:Go});
     }
-    ''', 'native fixed-content composition')
-    turn = ('import{cfn as __cuLoadReact}from"./app-shared-122c56612a72.js";\n'
+    ''', 'macOS native fixed-content composition')
+    turn = ('import{ggn as __cuLoadReact}from"./app-shared-6c00c2afcf84.js";\n'
             'import{renderNativeFixed as __cuFixed}from"./codex-usage-native-fixed.mjs";\n' + turn)
-    initial = archive.read(INITIAL).decode()
-    anchor = '(Rs.div,{"aria-hidden":u,className:f,inert:p,initial:m,animate:h,exit:g,transition:_,children:b})'
-    initial = unique_replace(initial, anchor, anchor.replace('{"aria-hidden":u', '{"data-cu-native-utility":true,"aria-hidden":u'), 'native utility flow marker')
-    # New UI modules contain only our original source, never redistributed app code.
+    anchor = '(gc.div,{"aria-hidden":u,className:f,inert:p,initial:m,animate:h,exit:g,transition:_,children:b})'
+    initial = unique_replace(initial, anchor, anchor.replace('{"aria-hidden":u', '{"data-cu-native-utility":true,"aria-hidden":u'), 'macOS utility marker')
     modules = {}
     for name in ['bar', 'metrics', 'speed', 'diff-slot', 'native-fixed', 'native-layout', 'responsive']:
-        source = (ROOT / 'src' / (name + '.mjs')).read_text()
-        source = source.replace("'./metrics.mjs'", "'./codex-usage-metrics.mjs'")
-        source = source.replace("'./speed.mjs'", "'./codex-usage-speed.mjs'")
-        source = source.replace("'./diff-slot.mjs'", "'./codex-usage-diff-slot.mjs'")
-        source = source.replace("'./responsive.mjs'", "'./codex-usage-responsive.mjs'")
-        modules['webview/assets/codex-usage-' + name + '.mjs'] = source.encode()
-    return {SHARED: shared.encode(), PRIMARY: primary.encode(), TURN: turn.encode(), INITIAL: initial.encode(), **modules}
+        source = (ROOT / 'src' / (name + '.mjs')).read_text(encoding='utf-8')
+        for dependency in ['metrics', 'speed', 'diff-slot', 'responsive']:
+            source = source.replace("'./" + dependency + ".mjs'", "'./codex-usage-" + dependency + ".mjs'")
+        modules['webview/assets/codex-usage-' + name + '.mjs'] = source.encode('utf-8')
+    return {PRIMARY: primary.encode('utf-8'), SHARED: shared.encode('utf-8'),
+            TURN: turn.encode('utf-8'), INITIAL: initial.encode('utf-8'), **modules}
 
 
 def app_version(app):
@@ -224,6 +210,9 @@ def copy_app(source, target):
         raise ValueError('Build slot already exists: ' + str(target))
     target.parent.mkdir(parents=True, exist_ok=True)
     subprocess.run(['/usr/bin/ditto', str(source), str(target)], check=True,timeout=300)
+    # Finder may annotate copied packages before their first verification.
+    # Strip only signature detritus from our copy, including recovery copies.
+    signing.clean_copy_metadata(target)
 
 
 def verify_unrelated(original, candidate, changed):
