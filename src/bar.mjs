@@ -87,7 +87,7 @@ export function createBar(React, jsx) {
           h('span', {className:'cu-bolt', 'aria-hidden':true}, '⚡'),
           h('span', {className:'cu-value'}, speed.value),
           h('span', {className:'cu-unit'}, h('span', {className:'cu-wide'}, 'token/s'), h('span', {className:'cu-compact'}, 'tok/s')),
-          h('span', {className:'cu-speed-note cu-wide'}, `last${speed.age ? ` · ${speed.age}` : ''}`)),
+          h('span', {className:'cu-speed-note cu-wide'}, speed.age)),
         h('div', {className:'cu-pill cu-context', title: context == null ? 'Context usage unavailable until Codex provides the current context size' : 'Current context window used'},
           h('span', {className:'cu-label'}, h('span', {className:'cu-wide'}, 'Context'), h('span', {className:'cu-compact'}, 'Ctx')), h('span', {className:'cu-value'}, percentText(context)))));
   };

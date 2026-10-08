@@ -71,7 +71,6 @@ try{
   check(utilityGap===8,'Native utility strip overlaps usage: '+utilityGap);
   check((await page.locator('.cu-speed').innerText()).includes('~22'),'Full-wait timing regression');
   await page.setViewportSize({width:1280,height:340});await settle();
-  check((await page.locator('.cu-speed').innerText()).includes('last'), 'Last-response label missing');
   check(/\d+s ago/.test(await page.locator('.cu-speed').innerText()), 'Sample age not visible');
   const speedTitle=await page.locator('.cu-speed').getAttribute('title');
   check(speedTitle.includes('Last response: ~22')&&speedTitle.includes('Weighted average (1 response): ~22'), 'Speed tooltip lost primary/secondary rates');

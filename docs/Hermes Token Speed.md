@@ -25,7 +25,7 @@ within the same chat; the last response is the primary metric.
 ## Presentation
 
 - During a running turn, the main number shows the last accepted response.
-- Wide layouts show `last · Ns ago`. Compact layouts keep the explanation and
+- Wide layouts show `Ns ago`. Compact layouts keep the explanation and
   age in the tooltip and accessibility label.
 - Age refreshes every five seconds while a fresh sample is displayed. Samples
   aged 60 seconds or more display `—` at the next refresh; the tooltip identifies
