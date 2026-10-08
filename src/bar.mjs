@@ -1,5 +1,5 @@
 import {weeklyWindow, contextPercent, percentText, resetText, quotaTone, remainingPercent} from './metrics.mjs';
-import {subscribeSpeed, readSpeed} from './speed.mjs';
+import {subscribeSpeed, readSpeedDetails, speedPresentation} from './speed.mjs';
 import {useBarFit} from './responsive.mjs';
 import {setDiffSlot} from './diff-slot.mjs';
 
@@ -9,10 +9,11 @@ export const styles = `
 .cu-compact{display:none}
 .cu-bar{display:flex;flex-wrap:nowrap;align-items:center;gap:8px;padding:0;border:0;border-radius:0;background:transparent;color:var(--color-text,#eee);font-family:inherit;font-size:inherit;font-weight:inherit;line-height:1.2;font-variant-numeric:tabular-nums;box-sizing:border-box;width:100%}
 .cu-pill{display:flex;align-items:center;justify-content:space-evenly;gap:8px;background:var(--color-surface-elevated-secondary,#2a2a2a);border:1px solid color-mix(in oklab,var(--color-border,#444) 80%,transparent);border-radius:var(--radius-3xl,24px);padding:6px 8px;box-sizing:border-box;min-width:0;white-space:nowrap;flex:var(--cu-spaces,1) 0 auto}
-.cu-week{--cu-spaces:5;min-width:min-content}.cu-speed{--cu-spaces:4}.cu-context{--cu-spaces:3}.cu-changes{--cu-spaces:2}
+.cu-week{--cu-spaces:5;min-width:min-content}.cu-speed{--cu-spaces:5}.cu-context{--cu-spaces:3}.cu-changes{--cu-spaces:2}
 .cu-changes:empty{display:none}.cu-changes button,.cu-changes [class*="text-size-chat"]{font-size:inherit;line-height:inherit}
 .cu-changes button{font-family:inherit;white-space:nowrap}
 [data-cu-above-panel]:not(:has([data-cu-existing-row])):has([data-cu-extra]:empty){display:none}
+.cu-speed-note{color:var(--color-text-secondary,#aaa);font-size:.85em}
 .cu-label,.cu-reset,.cu-unit{color:var(--color-text-secondary,#aaa)}.cu-value{color:var(--color-text,#eee);font-weight:inherit}.cu-bolt{color:var(--color-text-secondary,#aaa)}
 .cu-track{height:5.6px;width:calc(var(--cu-track-base,100px) + var(--cu-track-extra,0px));flex:0 0 calc(var(--cu-track-base,100px) + var(--cu-track-extra,0px));min-width:16px;background:color-mix(in srgb,var(--color-text,#eee) 10%,transparent);border-radius:99px;overflow:hidden}
 .cu-bar[data-cu-measure] .cu-pill{flex-grow:0;flex-shrink:0}
@@ -29,6 +30,7 @@ export const styles = `
 .cu-bar:is([data-cu-stage="2"],[data-cu-stage="3"]) .cu-wide{display:none}
 .cu-bar:is([data-cu-stage="2"],[data-cu-stage="3"]) .cu-compact{display:inline}
 .cu-bar:is([data-cu-fit="4"],[data-cu-fit="5"],[data-cu-fit="6"],[data-cu-fit="7"],[data-cu-fit="8"]) .cu-bolt{display:none}
+.cu-bar:is([data-cu-stage="2"],[data-cu-stage="3"]) .cu-speed{--cu-spaces:4}
 .cu-bar:is([data-cu-fit="4"],[data-cu-fit="5"],[data-cu-fit="6"],[data-cu-fit="7"],[data-cu-fit="8"]) .cu-speed{--cu-spaces:3}
 .cu-bar:is([data-cu-stage="2"],[data-cu-stage="3"]) .cu-week-label{display:none}
 .cu-bar:is([data-cu-stage="2"],[data-cu-stage="3"]) .cu-week{--cu-spaces:4}
@@ -54,8 +56,15 @@ export function createBar(React, jsx) {
       return () => clearInterval(timer);
     }, []);
     const subscribe = React.useCallback(callback => subscribeSpeed(hostId, conversationId, callback), [hostId, conversationId]);
-    const snapshot = React.useCallback(() => readSpeed(hostId, conversationId), [hostId, conversationId]);
-    const speed = React.useSyncExternalStore(subscribe, snapshot, () => null);
+    const snapshot = React.useCallback(() => readSpeedDetails(hostId, conversationId), [hostId, conversationId]);
+    const speedDetail = React.useSyncExternalStore(subscribe, snapshot, () => null);
+    const speed = speedPresentation(speedDetail);
+    const speedExpired = speed.value === '—';
+    React.useEffect(() => {
+      if (!speedDetail || speedExpired) return;
+      const timer = setInterval(() => setTick(tick => tick + 1), 5000);
+      return () => clearInterval(timer);
+    }, [speedDetail, speedExpired]);
     const diffRef = React.useCallback(node => setDiffSlot(hostId, conversationId, node), [hostId, conversationId]);
     const weekly = weeklyWindow(entries);
     const expired = weekly?.resetsAt != null && weekly.resetsAt * 1000 <= now;
@@ -74,10 +83,11 @@ export function createBar(React, jsx) {
             h('span', {className:'cu-wide'}, resetText(weekly?.resetsAt, now)),
             h('span', {className:'cu-compact'}, resetText(weekly?.resetsAt, now, true)))),
         h('div', {className:'cu-pill cu-changes', ref:diffRef}),
-        h('div', {className:'cu-pill cu-speed', title: speed == null ? 'No active measured response. Speed appears during a running turn after fresh token counts and elapsed timing are available; idle chats show —.' : 'Estimated throughput over up to 10 model responses: output tokens / elapsed model-wait seconds, including time before the first token and excluding observed tool execution. Codex does not expose provider API latency.'},
+        h('div', {className:'cu-pill cu-speed', title:speed.title, 'aria-label':`Token speed. ${speed.title}`},
           h('span', {className:'cu-bolt', 'aria-hidden':true}, '⚡'),
-          h('span', {className:'cu-value'}, speed == null ? '—' : `~${speed}`),
-          h('span', {className:'cu-unit'}, h('span', {className:'cu-wide'}, 'token/s'), h('span', {className:'cu-compact'}, 'tok/s'))),
+          h('span', {className:'cu-value'}, speed.value),
+          h('span', {className:'cu-unit'}, h('span', {className:'cu-wide'}, 'token/s'), h('span', {className:'cu-compact'}, 'tok/s')),
+          h('span', {className:'cu-speed-note cu-wide'}, `last${speed.age ? ` · ${speed.age}` : ''}`)),
         h('div', {className:'cu-pill cu-context', title: context == null ? 'Context usage unavailable until Codex provides the current context size' : 'Current context window used'},
           h('span', {className:'cu-label'}, h('span', {className:'cu-wide'}, 'Context'), h('span', {className:'cu-compact'}, 'Ctx')), h('span', {className:'cu-value'}, percentText(context)))));
   };

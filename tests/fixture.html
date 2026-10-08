@@ -26,12 +26,15 @@
   import {renderNativeFixed} from '/src/native-fixed.mjs';
   const React=loadReact(), JSX=loadJSX(), DOM={...loadDOM(),...loadPortal()}, Bar=createBar(React,JSX);
   const host='layout-fixture', thread='fictional-thread', turn='fictional-turn';
-  for(const [method,params,now] of [
-    ['turn/started',{turn:{id:turn}},0],
-    ['item/agentMessage/delta',{turnId:turn,delta:'x'},4000],
-    ['item/agentMessage/delta',{turnId:turn,delta:'x'},5000],
-    ['thread/tokenUsage/updated',{tokenUsage:{last:{outputTokens:109},total:{outputTokens:109}}},5000]])
-    observeMetric(host,method,{threadId:thread,...params},now);
+  // Keep layout fixtures fresh during long matrices; lifecycle/expiry are
+  // exercised explicitly rather than depending on how fast Chrome runs.
+  function seedSpeed() {
+    const now=performance.now();
+    observeMetric(host,'account/updated',{},now);
+    observeMetric(host,'turn/started',{threadId:thread,turn:{id:turn}},now-5000);
+    observeMetric(host,'thread/tokenUsage/updated',{threadId:thread,turnId:turn,
+      tokenUsage:{last:{outputTokens:109,reasoningOutputTokens:60},total:{outputTokens:109}}},now);
+  }
   const root=DOM.createRoot(document.getElementById('usage'));
   let clicks=0, state='normal';
   function Diff({showLeadingSeparator}) {
@@ -57,6 +60,6 @@
       usage:state==='missing'?null:{modelContextWindow:1000,last:{totalTokens:state==='zero'?0:290}}}),
       JSX.jsx(NativePanel,{state,conversationId})]});
   }
-  function render(next='normal',font=14) {state=next;document.body.style.setProperty('--codex-chat-font-size',font+'px');root.render(JSX.jsx(App,{state}));}
-  window.fixture={render,goal:visible=>document.querySelector('.fixture-goal').style.display=visible?'block':'none',utility:visible=>document.querySelector('.fixture-utility').style.display=visible?'flex':'none',get clicks(){return clicks;}};render();
+  function render(next='normal',font=14) {seedSpeed();state=next;document.body.style.setProperty('--codex-chat-font-size',font+'px');root.render(JSX.jsx(App,{state}));}
+  window.fixture={render,speed:seedSpeed,goal:visible=>document.querySelector('.fixture-goal').style.display=visible?'block':'none',utility:visible=>document.querySelector('.fixture-utility').style.display=visible?'flex':'none',get clicks(){return clicks;}};render();
 </script></html>

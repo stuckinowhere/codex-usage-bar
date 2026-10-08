@@ -57,17 +57,28 @@ class SharedSpeedTests(unittest.TestCase):
                     (root / 'speed.mjs').write_bytes(speed)
                     (root / 'check.mjs').write_text('''
 import assert from 'node:assert/strict';
-import {observeMetric, readSpeed, subscribeSpeed} from './speed.mjs';
+import {observeMetric, readSpeed, readSpeedDetails, subscribeSpeed} from './speed.mjs';
 const notices = [];
 subscribeSpeed('host', 'chat', () => notices.push(readSpeed('host', 'chat')));
 observeMetric('host', 'turn/started', {threadId:'chat', turn:{id:'turn'}}, 0);
 observeMetric('host', 'thread/tokenUsage/updated', {
-  threadId:'chat', tokenUsage:{last:{outputTokens:110},total:{outputTokens:110}}
+  threadId:'chat', turnId:'turn', tokenUsage:{last:{outputTokens:110},total:{outputTokens:110}}
 }, 5000);
 assert.equal(readSpeed('host', 'chat'), 22);
 observeMetric('host', 'turn/completed', {threadId:'chat',turn:{id:'turn'}}, 5100);
 assert.equal(readSpeed('host', 'chat'), null);
-assert.deepEqual(notices, [22, null]);
+observeMetric('host', 'turn/started', {threadId:'chat',turn:{id:'next'}}, 6000);
+observeMetric('host', 'thread/tokenUsage/updated', {
+  threadId:'chat',turnId:'next',tokenUsage:{last:{outputTokens:300,reasoningOutputTokens:60},total:{outputTokens:410}}
+}, 9000);
+assert.equal(readSpeed('host','chat'),100);
+assert.equal(readSpeedDetails('host','chat').average,51);
+assert.equal(readSpeedDetails('host','chat').nonReasoningRate,80);
+observeMetric('host','thread/tokenUsage/updated',{
+  threadId:'chat',turnId:'turn',tokenUsage:{last:{outputTokens:999},total:{outputTokens:1409}}
+}, 9100);
+assert.equal(readSpeed('host','chat'),100);
+assert.deepEqual(notices, [22, null, 100]);
 ''', encoding='utf-8')
                     subprocess.run(['node', str(root / 'check.mjs')], check=True, timeout=15)
 

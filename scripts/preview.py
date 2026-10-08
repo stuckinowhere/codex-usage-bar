@@ -4,6 +4,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 import argparse
 import json
+import os
 import sys
 sys.dont_write_bytecode = True
 from mod import Archive, ROOT, NEW, ASAR, SHARED
@@ -12,7 +13,7 @@ HOST_FILES = {Path(SHARED).name,'rolldown-runtime-2d059c5e81f4.js',
               'codex-usage-speed.mjs','codex-usage-bar.mjs','codex-usage-metrics.mjs',
               'codex-usage-diff-slot.mjs','codex-usage-native-fixed.mjs',
               'codex-usage-responsive.mjs','codex-usage-native-layout.mjs'}
-HOST_ARCHIVE = NEW / ASAR
+HOST_ARCHIVE = Path(os.environ['CODEX_USAGE_HOST_ASAR']) if os.environ.get('CODEX_USAGE_HOST_ASAR') else NEW / ASAR
 WINDOWS = False
 
 class Handler(BaseHTTPRequestHandler):

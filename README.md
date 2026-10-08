@@ -20,7 +20,7 @@ Codex Usage Bar is a community desktop modification that uses Codex's existing a
 | --- | --- |
 | **Weekly** | Account quota remaining and its reset countdown. The progress track shows the same remaining percentage. |
 | **Files changed** | The selected chat's native control, with its existing diff action. |
-| **Token speed** | An approximate, per-chat tokens-per-second estimate, marked `~`, during a running turn. It clears to `—` when the turn finishes or the chat becomes idle. |
+| **Token speed** | The last valid response's approximate output tokens/s, marked `~`. Wide layouts show its age; the tooltip contains a weighted average and reasoning breakdown. Doubtful or stale samples show `—`; completion/idle clears the number. |
 | **Context** | Context usage from the selected conversation's existing token-usage state. |
 
 Missing data appears as `—`, never a fabricated zero. The row adapts to narrow composer widths by shortening labels and spacing; it keeps one row and follows the host's theme and font. Five-hour usage is not implemented.
@@ -107,7 +107,7 @@ node --test tests/diff-slot.test.mjs tests/metrics.test.mjs tests/speed.test.mjs
 
 The [CI workflow](.github/workflows/ci.yml) runs shared and platform-specific synthetic tests on macOS and Windows with Node.js 22 and Python 3.11. Native installed-app acceptance is tracked separately.
 
-Installer tests use Python's standard library; platform-specific cases need their target OS. UI fixture tests additionally need a local verified candidate, Playwright and Chrome.
+Installer tests use Python's standard library; platform-specific cases need their target OS. UI fixture tests additionally need host renderer assets, Playwright and Chrome. Set `CODEX_USAGE_HOST_ASAR` to a reviewed local `app.asar` to read those assets without rebuilding or installing the app; otherwise the fixture uses `New Build`.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, test commands and what to include in a pull request.
 

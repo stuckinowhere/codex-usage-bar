@@ -70,6 +70,13 @@ try{
   const utilityGap=await page.evaluate(()=>document.querySelector('.fixture-utility').getBoundingClientRect().top-document.querySelector('#usage').getBoundingClientRect().bottom);
   check(utilityGap===8,'Native utility strip overlaps usage: '+utilityGap);
   check((await page.locator('.cu-speed').innerText()).includes('~22'),'Full-wait timing regression');
+  await page.setViewportSize({width:1280,height:340});await settle();
+  check((await page.locator('.cu-speed').innerText()).includes('last'), 'Last-response label missing');
+  check(/\d+s ago/.test(await page.locator('.cu-speed').innerText()), 'Sample age not visible');
+  const speedTitle=await page.locator('.cu-speed').getAttribute('title');
+  check(speedTitle.includes('Last response: ~22')&&speedTitle.includes('Weighted average (1 response): ~22'), 'Speed tooltip lost primary/secondary rates');
+  check(speedTitle.includes('Non-reasoning: ~10')&&speedTitle.includes('reasoning: ~12'), 'Reasoning split missing');
+  await page.setViewportSize({width:900,height:340});await settle();
   await page.locator('.cu-changes button').click();check(await page.evaluate(()=>fixture.clicks)===1,'Embedded diff click disconnected');
   await page.locator('.cu-changes button').focus();await page.keyboard.press('Enter');check(await page.evaluate(()=>fixture.clicks)===2,'Embedded diff keyboard action disconnected');
   await page.locator('.cu-changes button').evaluate(el=>el.blur());
@@ -198,7 +205,10 @@ try{
     });
     for(const row of stages){
       const expected=row.chatWidth<=490?3:row.chatWidth<=580?2:row.chatWidth<=620?1:0;
-      check(state==='nodiff'?row.stage===expected:row.stage>=expected,'Chat breakpoint differs: '+JSON.stringify({state,row,expected}));
+      // Breakpoints are minimum stages; the added sample age can require
+      // further fitting even when there is no diff control.
+      check(row.stage>=expected,'Chat breakpoint differs: '+JSON.stringify({state,row,expected}));
+      if(row.chatWidth===1000)check(row.stage===0,'Wide layout compacted unnecessarily');
       check((row.weekly==='none')===(row.stage>=2),'Weekly did not hide at Stage 2');
       check((row.left==='none')===(row.fit>=2),'Left did not hide at fit 2');
       check(row.unit===(row.stage>=2?'tok/s':'token/s'),'Paired compact unit broke');
@@ -247,7 +257,20 @@ try{
     observer.observe(bar,{attributes:true,attributeFilter:['style']});await new Promise(resolve=>setTimeout(resolve,250));observer.disconnect();return writes;
   });
   check(idleWrites===0,'Responsive/native observers kept refitting an idle bar: '+idleWrites);
+  // Advance the real component's timers, not just the pure formatter.
+  await page.setViewportSize({width:1280,height:340});
+  await page.clock.install();
+  await page.evaluate(()=>fixture.render('normal',14));
+  await page.waitForFunction(()=>document.querySelector('.cu-speed .cu-value')?.textContent==='~22');
+  await page.clock.fastForward(5000);
+  await page.waitForFunction(()=>/Updated 5s ago/.test(document.querySelector('.cu-speed')?.title));
+  await page.clock.fastForward(55000);
+  await page.waitForFunction(()=>document.querySelector('.cu-speed .cu-value')?.textContent==='—');
+  check((await page.locator('.cu-speed').getAttribute('title')).includes('stale sample hidden'), 'Expired sample still appears live');
+  await page.evaluate(()=>fixture.speed());
+  await page.waitForFunction(()=>document.querySelector('.cu-speed .cu-value')?.textContent==='~22');
+  check((await page.locator('.cu-speed').getAttribute('title')).includes('Updated 0s ago'), 'Fresh equal-rate sample did not refresh the component');
   check(!errors.length,errors.join('\n'));
-  await fs.writeFile(path.join(outputDirectory,'Layout Verification.json'),JSON.stringify({results,zoomLayouts:60,equalObjectSpacing:true,weeklySpareShare:0.70,responsiveStages:3,goalWidthFallback:true,chatBreakpoints,fontChanges,states:8,nativeColors:true,utilityGap,narrowEffectiveWidth:188,inputGap:gap,errors},null,2)+'\n');
-  console.log(JSON.stringify({layouts:results.length,zoomLayouts:60,equalObjectSpacing:true,weeklySpareShare:0.70,responsiveStages:3,goalWidthFallback:true,chatBreakpoints,fontChanges,nativeFontSizes:[12,14,18,20,24],widths:[320,375,480,600,768,900,1280],states:8,nativeColors:true,utilityGap,portalClickAndKeyboard:true,nativeFallback:true,inputGap:gap,narrowEffectiveWidth:188,errors}));
+  await fs.writeFile(path.join(outputDirectory,'Layout Verification.json'),JSON.stringify({results,zoomLayouts:60,equalObjectSpacing:true,weeklySpareShare:0.70,responsiveStages:3,goalWidthFallback:true,chatBreakpoints,fontChanges,speedAgeAndExpiry:true,states:8,nativeColors:true,utilityGap,narrowEffectiveWidth:188,inputGap:gap,errors},null,2)+'\n');
+  console.log(JSON.stringify({layouts:results.length,zoomLayouts:60,equalObjectSpacing:true,weeklySpareShare:0.70,responsiveStages:3,goalWidthFallback:true,chatBreakpoints,fontChanges,nativeFontSizes:[12,14,18,20,24],widths:[320,375,480,600,768,900,1280],states:8,nativeColors:true,utilityGap,speedAgeAndExpiry:true,portalClickAndKeyboard:true,nativeFallback:true,inputGap:gap,narrowEffectiveWidth:188,errors}));
 }finally{await browser?.close();server.kill();}
