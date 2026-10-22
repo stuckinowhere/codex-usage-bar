@@ -67,7 +67,7 @@ $env:CODEX_USAGE_PYTHON = 'C:\path\to\python.exe'
 node tests/render.mjs
 ```
 
-The fixture uses the Windows build's React, fictional metrics and a loopback-only server. It never attaches to a running app. Node.js 20+, Playwright and Chrome are required for that test.
+The fixture uses the Windows build's React, fictional metrics and a loopback-only server. It never attaches to a running app. Node.js 22.23.4+ (22.x) or 24.22.1+ (24.x), Playwright and Chrome are required for that test.
 
 Recorded on Windows 11 build 26200:
 

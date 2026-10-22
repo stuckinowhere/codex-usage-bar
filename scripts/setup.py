@@ -71,10 +71,12 @@ def preflight():
         raise ValueError('Unsupported Codex version. Required: ' + mod.VERSION + '. App unchanged; wait for a reviewed version update.')
     node = shutil.which('node')
     if not node:
-        raise ValueError('Install Node.js 20 or newer, then rerun this command. App unchanged.')
+        raise ValueError('Install Node.js 22.23.4+ (22.x) or 24.22.1+ (24.x). App unchanged.')
     version = subprocess.run([node,'--version'],check=True,capture_output=True,text=True,timeout=15).stdout.strip()
-    if int(version.lstrip('v').split('.')[0]) < 20:
-        raise ValueError('Node.js 20 or newer is required. App unchanged.')
+    parts = tuple(int(part) for part in version.lstrip('v').split('.'))
+    minimum = {22: (22, 23, 4), 24: (24, 22, 1)}.get(parts[0])
+    if minimum is None or parts < minimum:
+        raise ValueError('Node.js 22.23.4+ (22.x) or 24.22.1+ (24.x) is required. App unchanged.')
     if not shutil.which('codesign'):
         raise ValueError('macOS codesign is unavailable. App unchanged.')
     if not os.access(mod.APP.parent,os.W_OK) or not os.access(mod.ROOT,os.W_OK):
