@@ -6,7 +6,7 @@ In macOS Terminal, from the downloaded repository, run:
 python3 scripts/setup.py
 ```
 
-Requirements: Apple Silicon macOS, Python 3.9+, Node.js 20+, the inspected desktop version `26.1002.52244` at `/Applications/ChatGPT.app`, and a writable checkout on the same filesystem as `/Applications` with backup space. Use `~/Library/Application Support/CodexUsageBar/source` or another local folder outside File Provider syncing. Synced Documents/Desktop folders can reintroduce Finder metadata while signatures are being checked. Other versions stop without replacement; the installer never guesses new patch anchors or disables validation.
+Requirements: Apple Silicon macOS, Python 3.9+, Node.js 22.23.4+ (22.x) or 24.22.1+ (24.x), the inspected desktop version `26.1002.52244` at `/Applications/ChatGPT.app`, and a writable checkout on the same filesystem as `/Applications` with backup space. Use `~/Library/Application Support/CodexUsageBar/source` or another local folder outside File Provider syncing. Synced Documents/Desktop folders can reintroduce Finder metadata while signatures are being checked. Other versions stop without replacement; the installer never guesses new patch anchors or disables validation.
 
 This fork's renderer and signing changes are recorded in the
 [26.1002.52244 review](macOS%2026.1002.52244.md). The signing reader decodes

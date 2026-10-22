@@ -42,7 +42,7 @@ Follow the instructions for your platform below.
 
 ### macOS
 
-Requires **Apple Silicon**, **Python 3.9+**, **Node.js 20+**, and the pinned desktop version at `/Applications/ChatGPT.app`. Keep this checkout on the same disk as `/Applications`, with space for the candidate and recovery copies. Use a local folder outside iCloud/OneDrive/other File Provider syncing: synced package metadata can invalidate strict code signing. Application Support is the recommended location.
+Requires **Apple Silicon**, **Python 3.9+**, **Node.js 22.23.4+ (22.x) or 24.22.1+ (24.x)**, and the pinned desktop version at `/Applications/ChatGPT.app`. Keep this checkout on the same disk as `/Applications`, with space for the candidate and recovery copies. Use a local folder outside iCloud/OneDrive/other File Provider syncing: synced package metadata can invalidate strict code signing. Application Support is the recommended location.
 
 Run in **macOS Terminal, outside Codex**:
 
@@ -99,13 +99,13 @@ This repository contains original source, tests and documentation. App binaries,
 
 ## Development
 
-The shared JavaScript tests require Node.js 20+ and no application installation:
+The shared JavaScript tests require Node.js 22.23.4+ (22.x) or 24.22.1+ (24.x) and no application installation:
 
 ```sh
 node --test tests/diff-slot.test.mjs tests/metrics.test.mjs tests/speed.test.mjs
 ```
 
-The [CI workflow](.github/workflows/ci.yml) runs shared and platform-specific synthetic tests on macOS and Windows with Node.js 22 and Python 3.11. Native installed-app acceptance is tracked separately.
+The [CI workflow](.github/workflows/ci.yml) runs shared and platform-specific synthetic tests on macOS and Windows with Node.js 22.23.4 and Python 3.11. Native installed-app acceptance is tracked separately.
 
 Installer tests use Python's standard library; platform-specific cases need their target OS. UI fixture tests additionally need host renderer assets, Playwright and Chrome. Set `CODEX_USAGE_HOST_ASAR` to a reviewed local `app.asar` to read those assets without rebuilding or installing the app; otherwise the fixture uses `New Build`.
 

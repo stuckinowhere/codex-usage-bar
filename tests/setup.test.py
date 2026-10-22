@@ -18,6 +18,23 @@ import install_once as worker
 
 
 class SetupTests(unittest.TestCase):
+    def test_node_security_floor_before_signing_or_build(self):
+        versions = {
+            'v20.20.0': False, 'v22.23.3': False, 'v22.23.4': True,
+            'v24.22.0': False, 'v24.22.1': True, 'v24.23.0': True,
+            'v25.5.0': False,
+        }
+        for version, accepted in versions.items():
+            with self.subTest(version=version), ExitStack() as stack:
+                stack.enter_context(patch.object(setup, 'require_supported_platform'))
+                stack.enter_context(patch.object(setup.mod, 'APP', Mock(is_dir=lambda: True, is_symlink=lambda: False)))
+                stack.enter_context(patch.object(setup.mod, 'app_version', return_value=setup.mod.VERSION))
+                stack.enter_context(patch.object(setup.shutil, 'which', side_effect=lambda name: '/fixture/node' if name == 'node' else None))
+                stack.enter_context(patch.object(setup.subprocess, 'run', return_value=Mock(stdout=version)))
+                expected = 'codesign is unavailable' if accepted else 'Node.js 22.23.4'
+                with self.assertRaisesRegex(ValueError, expected):
+                    setup.preflight()
+
     def test_unsupported_platform_stops_before_app_or_build_access(self):
         with patch.object(setup.platform,'system',return_value='Linux'),patch.object(setup.mod,'app_version') as version:
             with self.assertRaisesRegex(ValueError,'Apple Silicon'):setup.preflight()
@@ -101,7 +118,7 @@ runpy.run_path(SCRIPT,run_name='__main__')
             stack.enter_context(patch.object(setup.mod,'sha',return_value='pending'))
             stack.enter_context(patch.object(setup.mod,'codex_instances',return_value=[]))
             stack.enter_context(patch.object(setup.shutil,'which',return_value='/fixture/tool'))
-            stack.enter_context(patch.object(setup.subprocess,'run',side_effect=lambda argv,**kw:Mock(stdout='v20.0.0' if '--version' in argv else '1024 fixture')))
+            stack.enter_context(patch.object(setup.subprocess,'run',side_effect=lambda argv,**kw:Mock(stdout='v22.23.4' if '--version' in argv else '1024 fixture')))
             size = 1024*1024
             space = stack.enter_context(patch.object(setup.shutil,'disk_usage',return_value=Mock(free=3*size+128*1024*1024)))
             with self.assertRaisesRegex(ValueError,'Not enough free space'):setup.preflight()

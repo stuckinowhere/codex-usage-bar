@@ -15,7 +15,7 @@ Review any attached output first. Remove account details, tokens, chat contents,
 
 ## Set up
 
-Clone the repository and use a focused branch. Shared JavaScript checks need Node.js 20+. Python checks use the standard library; use Python 3.10+ when working across both platform adapters.
+Clone the repository and use a focused branch. Shared JavaScript checks need Node.js 22.23.4+ (22.x) or 24.22.1+ (24.x). Python checks use the standard library; use Python 3.10+ when working across both platform adapters.
 
 ```sh
 git clone https://github.com/cocombee/codex-usage-bar.git
@@ -27,7 +27,7 @@ The shared JavaScript tests do not require a local desktop application. Building
 
 ## Run checks
 
-Use Node.js 22 and Python 3.11 to match the [CI workflow](.github/workflows/ci.yml). It runs the shared checks below on macOS and Windows, plus each platform's Python suites. These synthetic checks require no vendor app or package installation; rendered-fixture and native acceptance checks remain separate.
+Use Node.js 22.23.4 and Python 3.11 to match the [CI workflow](.github/workflows/ci.yml). It runs the shared checks below on macOS and Windows, plus each platform's Python suites. These synthetic checks require no vendor app or package installation; rendered-fixture and native acceptance checks remain separate.
 
 ### Shared JavaScript
 
@@ -70,7 +70,7 @@ The macOS suite does not establish Windows compatibility. Windows file-locking a
 
 ### Rendered fixture
 
-The fixture requires a **locally built, verified candidate**, Node.js 20+, Playwright and Chrome. It loads host React from the candidate and supplies fictional metrics; it does not connect to the running application.
+The fixture requires a **locally built, verified candidate**, Node.js 22.23.4+ (22.x) or 24.22.1+ (24.x), Playwright and Chrome. It loads host React from the candidate and supplies fictional metrics; it does not connect to the running application.
 
 On macOS, set the absolute path to a `node_modules` directory containing Playwright:
 
